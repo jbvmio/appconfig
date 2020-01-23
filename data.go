@@ -71,9 +71,19 @@ func (d *Data) AssignAD(defaultValue ...string) {
 	}
 	switch d.DataType() {
 	case TypeEndpoint:
-		d.AppDomain = epAD(d.Value)
+		ad := epAD(d.Value)
+		switch {
+		case ad != "":
+			d.AppDomain = ad
+		default:
+			if d.AppDomain == "" {
+				d.AppDomain = dv
+			}
+		}
 	default:
-		d.AppDomain = dv
+		if d.AppDomain == "" {
+			d.AppDomain = dv
+		}
 	}
 }
 

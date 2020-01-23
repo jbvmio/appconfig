@@ -30,7 +30,7 @@ type KafkaMSG struct {
 // StateFile returns the StateFile from a KafkaMSG.
 func (k *KafkaMSG) StateFile() (stateFile StateFile, err error) {
 	err = json.Unmarshal([]byte(k.Message), &stateFile)
-	stateFile.AssignADs()
+	stateFile.AssignADs(stateFile.findDefaultADs())
 	return
 }
 
@@ -41,7 +41,7 @@ func (k *KafkaMSG) SavedFile() (savedFile SavedFile, err error) {
 	if err != nil {
 		return
 	}
-	stateFile.AssignADs()
+	stateFile.AssignADs(stateFile.findDefaultADs())
 	savedFile = SavedFile{
 		ENV:       k.ENV,
 		ASI:       k.ASI,
@@ -68,4 +68,23 @@ func timeFromFloat64(ts float64) time.Time {
 	secs := int64(ts)
 	nsecs := int64((ts - float64(secs)) * 1e9)
 	return time.Unix(secs, nsecs)
+}
+
+func (s *StateFile) findDefaultADs() string {
+	var appDomain string
+	ads := filterUnique(s.FromType(TypeSimple).Get(`appdomain`))
+	switch {
+	case len(ads) > 1:
+		appDomain = `MULTIPLE`
+	case len(ads) < 1:
+		appDomain = `NA`
+	case len(ads) == 1:
+		switch a := ads[0]; a {
+		case "":
+			appDomain = `NA`
+		default:
+			appDomain = a
+		}
+	}
+	return appDomain
 }
